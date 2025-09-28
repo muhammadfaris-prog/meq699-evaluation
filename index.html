@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEQ699 General Internship Lecturer's Evaluation Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { box-sizing: border-box; }
+        .modal-content::-webkit-scrollbar { width: 8px; }
+        .modal-content::-webkit-scrollbar-track { background: #f1f1f1; }
+        .modal-content::-webkit-scrollbar-thumb { background: #a855f7; } /* Purple scrollbar */
+        .modal-content::-webkit-scrollbar-thumb:hover { background: #9333ea; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-purple-100 min-h-screen font-sans">
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">MEQ699 General Internship</h1>
+                <p class="text-gray-600">Lecturer's Evaluation Dashboard</p>
+            </div>
+            <form id="loginForm" class="space-y-6">
+                <div>
+                    <label for="lecturerSelect" class="block text-sm font-medium text-gray-700 mb-2">User ID</label>
+                    <select id="lecturerSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 transition"></select>
+                </div>
+                <div>
+                    <label for="passwordInput" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <input type="password" id="passwordInput" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 transition" placeholder="Enter password">
+                </div>
+                <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition transform hover:scale-105">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="adminDashboard" class="hidden min-h-screen bg-gray-50">
+        <div class="p-4 md:p-8">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                <h1 class="text-2xl md:text-4xl font-bold text-gray-800">Admin Dashboard</h1>
+                <div class="flex gap-2">
+                    <button onclick="exportToExcel()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 md:px-6 rounded-lg transition text-sm md:text-base">Export</button>
+                    <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 md:px-6 rounded-lg transition text-sm md:text-base">Logout</button>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="space-y-8">
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h2 class="text-2xl font-semibold text-gray-700 mb-4">Overall Progress</h2>
+                        <div id="adminProgress" class="space-y-4"></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h2 class="text-2xl font-semibold text-gray-700 mb-4">Manage Lecturers</h2>
+                        <form id="addLecturerForm" class="flex gap-4 mb-4">
+                            <input type="text" id="newLecturerName" placeholder="New Lecturer Name" class="flex-grow px-3 py-2 border rounded-lg" required>
+                            <button type="submit" class="bg-purple-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-purple-600">Add</button>
+                        </form>
+                        <div id="lecturerList" class="space-y-2 max-h-60 overflow-y-auto"></div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h2 class="text-2xl font-semibold text-gray-700 mb-4">Manage Students</h2>
+                    <form id="addStudentForm" class="space-y-4 p-4 border rounded-lg bg-gray-50 mb-4">
+                        <select id="studentLecturerSelect" class="w-full p-2 border rounded-lg" required></select>
+                        <input type="text" id="newStudentId" placeholder="Student ID" class="w-full p-2 border rounded-lg" required>
+                        <input type="text" id="newStudentName" placeholder="Student Name" class="w-full p-2 border rounded-lg" required>
+                        <input type="text" id="newStudentCompany" placeholder="Company" class="w-full p-2 border rounded-lg" required>
+                        <button type="submit" class="w-full bg-purple-500 text-white p-2 rounded-lg font-semibold hover:bg-purple-600">Add Student</button>
+                    </form>
+                    <div id="studentList" class="space-y-4 max-h-96 overflow-y-auto"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="dashboardScreen" class="hidden min-h-screen">
+         <div class="p-4 md:p-8">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                <div class="text-center md:text-left">
+                    <h1 id="lecturerName" class="text-2xl md:text-4xl font-bold text-gray-800"></h1>
+                    <p class="text-gray-600">Your assigned students for evaluation.</p>
+                </div>
+                <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg transition">Logout</button>
+            </div>
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <div class="p-6">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left min-w-[600px]">
+                            <thead>
+                                <tr class="border-b-2 border-gray-200">
+                                    <th class="p-4 text-sm font-semibold text-gray-500 uppercase">Student ID</th>
+                                    <th class="p-4 text-sm font-semibold text-gray-500 uppercase">Name</th>
+                                    <th class="p-4 text-sm font-semibold text-gray-500 uppercase">Company</th>
+                                    <th class="p-4 text-sm font-semibold text-gray-500 uppercase">Status</th>
+                                    <th class="p-4 text-sm font-semibold text-gray-500 uppercase text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="evaluationModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+         <div class="bg-white rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh]">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-2xl font-bold text-gray-900">Student Evaluation Form</h3>
+                    <button onclick="closeEvaluationModal()" class="text-gray-400 hover:text-gray-600 text-3xl">&times;</button>
+                </div>
+                <div id="studentInfo" class="mt-2 text-gray-600"></div>
+            </div>
+            <form id="evaluationForm" class="p-6 overflow-y-auto modal-content max-h-[calc(90vh-140px)]">
+                 <div class="p-3 bg-purple-50 border border-purple-200 rounded-lg mb-6">
+                    <p class="text-center font-semibold text-purple-800">Rating Scale: 1 (Weak) to 5 (Outstanding)</p>
+                </div>
+                <div class="space-y-8">
+                    </div>
+                <div class="mt-6">
+                    <label for="comments" class="block text-lg font-semibold text-gray-800 mb-2">Additional Comments</label>
+                    <textarea id="comments" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"></textarea>
+                </div>
+                <div class="flex justify-end space-x-4 mt-8 pt-6 border-t">
+                    <button type="button" onclick="closeEvaluationModal()" class="px-6 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+                    <button type="submit" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="successMessage" class="hidden fixed top-5 right-5 bg-green-500 text-white py-3 px-6 rounded-lg shadow-lg z-50"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // --- START OF FIREBASE INTEGRATION ---
+
+        // Your web app's Firebase configuration (Your Magic Key)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAGKsqe_P0DML46W_LSCE4peJnkKY2BhP4",
+            authDomain: "meq699-evaluation.firebaseapp.com",
+            projectId: "meq699-evaluation",
+            storageBucket: "meq699-evaluation.appspot.com",
+            messagingSenderId: "292886390559",
+            appId: "1:292886390559:web:a11810d5ad8123a34f322a"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        // This is our connection to the online database
+        const db = firebase.firestore(); 
+
+        // --- END OF FIREBASE INTEGRATION ---
+
+
+        // --- DATA ---
+        let lecturerData = {};
+        const evaluationCriteria = {
+            "Section 1: Virtual Presentation/Factory Visit (10%)": [
+                { id: "s1_c1", label: "1. DISCIPLINE & ATTITUDE [CO3:PO8]" }, { id: "s1_c2", label: "2. WORK EFFICIENCY [CO4:PO9]" },
+                { id: "s1_c3", label: "3. COMMUNICATION SKILLS [CO5:PO10]" }, { id: "s1_c4", label: "4. SCOPE OF WORK [CO1:PO4]" },
+                { id: "s1_c5", label: "5. SAFETY, HEALTH, AND ENVIRONMENT [CO2:PO6]" }
+            ],
+            "Section 2: Logbook Evaluation (20%)": [
+                { id: "s2_c1", label: "1. LOGBOOK MAINTENANCE AND CONTENT [CO1:PO4]" }, { id: "s2_c2", label: "2. LOGBOOK INTEGRITY [CO3:PO8]" },
+                { id: "s2_c3", label: "3. LOGBOOK HAS BEEN CHECKED FREQUENTLY [CO4:PO10]" }
+            ],
+            "Section 3: Report Evaluation (30%)": [
+                { id: "s3_c1", label: "1. REPORT FORMAT, WRITING [CO1:PO4]" }, { id: "s3_c2", label: "2. REPORT DELIVERY [CO5:PO10]" },
+                { id: "s3_c3", label: "3. OBJECTIVES & SCOPE OF TRAINING [CO3:PO8]" }, { id: "s3_c4", label: "4. INDUSTRIAL SAFETY, HEALTH, AND ENVIRONMENT [CO2:PO6]" },
+                { id: "s3_c5", label: "5. INDUSTRIAL EXPERIENCE [CO6:PO11]" }, { id: "s3_c6", label: "6. INDUSTRIAL PROJECTS [CO3:PO8]" }, { id: "s3_c7", label: "7. SUMMARY [CO6:PO11]" }
+            ]
+        };
+        let currentLecturer = null;
+        let currentStudentId = null;
+
+
+        // --- FIREBASE DATA FUNCTIONS (REPLACES localStorage) ---
+
+        // New function to load data from the online Firestore database
+        async function loadData() {
+            console.log("Fetching data from Firestore...");
+            const snapshot = await db.collection("lecturers").get();
+            
+            if (snapshot.empty) {
+                // If the database is empty, create the initial default data and save it online.
+                console.log('Database is empty. Initializing and saving default data.');
+                initializeDefaultData();
+            } else {
+                // If data exists, load it into our local lecturerData object.
+                lecturerData = {}; // Clear any old data
+                snapshot.forEach(doc => {
+                    lecturerData[doc.id] = doc.data();
+                });
+                console.log('Data successfully loaded from Firestore.');
+            }
+        }
+        
+        // This helper function updates a specific lecturer's data in the online database.
+        async function updateLecturerInFirestore(lecturerId) {
+            if (!lecturerId || !lecturerData[lecturerId]) return;
+            try {
+                await db.collection("lecturers").doc(lecturerId).set(lecturerData[lecturerId]);
+                console.log(`Successfully updated ${lecturerId} in Firestore.`);
+            } catch (error) {
+                console.error("Error updating lecturer: ", error);
+            }
+        }
+        
+        // This helper function deletes a lecturer from the online database.
+        async function deleteLecturerFromFirestore(lecturerId) {
+             if (!lecturerId) return;
+             try {
+                await db.collection("lecturers").doc(lecturerId).delete();
+                console.log(`Successfully deleted ${lecturerId} from Firestore.`);
+             } catch (error) {
+                 console.error("Error deleting lecturer: ", error);
+             }
+        }
+
+
+        // --- UTILITY FUNCTIONS ---
+        function generatePassword(name) {
+            const namePart = name.substring(0, 3).toLowerCase();
+            return `${namePart}ceem243`;
+        }
+
+
+        // --- DATA INITIALIZATION ---
+        // This function now also saves the default data online if the database is empty.
+        function initializeDefaultData() {
+            const initialLecturers = {
+                'LEC001': { name: 'Dr. Lim Teong Yeong', students: [
+                    { id: '2022659954', name: 'AISAR BIN ZAINOL ARIFFIN', company: 'Intel Electronics (Malaysia) Sdn Bhd' },
+                    { id: '2022458122', name: 'MUHAMMAD IKRAM BIN ZAKARIA', company: 'Intel Electronics (Malaysia) Sdn Bhd' }
+                ]},
+                'LEC002': { name: 'Puan Rosniza Binti Rabilah', students: [
+                    { id: '2021477582', name: 'EMILY CEMPAKA BINTI MOHD FAZEIER', company: 'Intel Electronics (Malaysia) Sdn Bhd' },
+                    { id: '2022602154', name: 'NUR ALIA BINTI MOHAMAD SAFARI', company: 'Intel Electronics (Malaysia) Sdn Bhd' }
+                ]},
+                'LEC003': { name: 'Puan Mahfuzah Binti Zainudin', students: [
+                    { id: '2021814674', name: 'MUHAMMAD AIMAN BIN MOHD ASRI', company: 'Top Glove Sdn Bhd' }
+                ]},
+                'LEC004': { name: 'Ts. Dr. Ghazirah Binti Mustapha', students: [
+                    { id: '2021470468', name: 'IKHWAN NURUDDIN BIN KHAIRUDDIN', company: 'Thoyyib Pharma Sdn. Bhd' },
+                    { id: '2021864988', name: 'NUR AFIQAH BINTI MD YUSOFF', company: 'Sunchirin Industries (M) Bhd' }
+                ]},
+                'LEC005': { name: 'Ts. Dr. Mahamad Hisyam Bin Mahamad Basri', students: [
+                    { id: '2021842936', name: 'MUHAMMAD NAZHAN BIN NOR AZMI', company: 'Bacteria Free Water Engineering (M) Sdn Bhd' },
+                    { id: '2021898048', name: 'AMIRAH SAHIRA BINTI MOHD NAZARI', company: 'Indah Water Konsortium Sdn. Bhd.' }
+                ]},
+                'LEC006': { name: 'Dr. Norshah Aizat Binti Shuaib', students: [
+                    { id: '2021862564', name: 'MUHAMMAD AZRI AIMAN BIN MOHD ASRI', company: 'MRO_DEFENCE & SECURITY' }
+                ]},
+                'LEC007': { name: 'Dr. Mohd Azlan Bin Mohd Ishak', students: [
+                    { id: '2021470212', name: 'ANIS SURAYA BINTI NOR AZMI', company: 'Vector Infotech Sdn Bhd' },
+                    { id: '2021886868', name: 'MUHAMMAD TAUFIQ BIN MOHD ZAMRI', company: 'Vector Infotech Sdn Bhd' }
+                ]},
+                'LEC008': { name: 'Puan Siti Norafizah Binti Azizan', students: [
+                    { id: '2022602154', name: 'NUR ALIA BINTI MOHAMAD SAFARI', company: 'Robert Bosch (M) Sdn Bhd' }
+                ]},
+                'LEC009': { name: 'Puan Yuszainura Binti Yahaya', students: []},
+                'LEC010': { name: 'Ts. Dr. Fairosidi Bin Idrus', students: [
+                    { id: '2022876418', name: 'MOHAMAD AIMAN SHAFIQ BIN MOHAMAD SHABRI', company: 'DRB-HICOM Defence Technologies Sdn Bhd (DEFTECH)' },
+                    { id: '2022876436', name: 'MUHAMMAD NABIL BIN MOHD ASRI', company: 'DRB-HICOM Defence Technologies Sdn Bhd (DEFTECH)' }
+                ]},
+                'LEC011': { name: 'Puan Aziurah Binti Mohd Shah', students: [
+                    { id: '2021836578', name: 'MUHAMMAD RAOF BIN BAKHTIAR JAMILI', company: 'Proton Holdings Berhad' },
+                    { id: '2021839166', name: 'AHMAD SYAHMI ANUAR', company: 'Proton Holdings Berhad' }
+                ]},
+                'LEC012': { name: 'Dr. Noor Iswadi Bin Ismail', students: [
+                     { id: '2021898048', name: 'AMIRAH SAHIRA BINTI HARIRI', company: 'Indah Water Konsortium Sdn. Bhd.' }
+                ]}
+            };
+
+            for (const id in initialLecturers) {
+                lecturerData[id] = {
+                    ...initialLecturers[id],
+                    password: generatePassword(initialLecturers[id].name),
+                    students: initialLecturers[id].students.map(s => ({ ...s, evaluated: false, scores: {}, comments: '' }))
+                };
+                // Save each new lecturer to Firestore
+                updateLecturerInFirestore(id);
+            }
+        }
+
+
+        // --- RENDER FUNCTIONS (No changes here) ---
+        function renderAll() {
+            const currentScreen = currentLecturer === 'ADMIN' ? 'admin' : (currentLecturer ? 'lecturer' : 'login');
+            renderLoginDropdown();
+            if (currentScreen === 'admin') renderAdminDashboard();
+            if (currentScreen === 'lecturer') showLecturerDashboard();
+        }
+
+        function renderAdminDashboard() {
+            const progressContainer = document.getElementById('adminProgress');
+            const lecturerListContainer = document.getElementById('lecturerList');
+            const studentListContainer = document.getElementById('studentList');
+            const studentLecturerSelect = document.getElementById('studentLecturerSelect');
+
+            progressContainer.innerHTML = '';
+            lecturerListContainer.innerHTML = '';
+            studentListContainer.innerHTML = '';
+            studentLecturerSelect.innerHTML = '';
+
+            Object.keys(lecturerData).sort().forEach(id => {
+                const data = lecturerData[id];
+                const evaluated = data.students.filter(s => s.evaluated).length;
+                const total = data.students.length;
+                const percentage = total > 0 ? (evaluated / total) * 100 : 0;
+                progressContainer.innerHTML += `<div><div class="flex justify-between mb-1"><span class="font-medium">${data.name}</span><span>${evaluated}/${total}</span></div><div class="w-full bg-gray-200 rounded-full h-2.5"><div class="bg-purple-600 h-2.5 rounded-full" style="width: ${percentage}%"></div></div></div>`;
+                lecturerListContainer.innerHTML += `<div class="flex justify-between items-center p-2 bg-gray-50 rounded-lg"><div>${id} - ${data.name}</div><div class="flex items-center gap-2"><button onclick="changeLecturerPassword('${id}')" class="text-blue-500 font-bold">Password</button><button onclick="removeLecturer('${id}')" class="text-red-500 font-bold">Remove</button></div></div>`;
+                studentLecturerSelect.innerHTML += `<option value="${id}">${data.name}</option>`;
+                if (data.students.length > 0) {
+                    let studentHTML = `<div class="p-2"><h3 class="font-bold">${data.name}</h3><div class="pl-4 space-y-1">`;
+                    data.students.forEach(s => {
+                        studentHTML += `<div class="flex justify-between items-center text-sm"><span>${s.name} (${s.id})</span><button onclick="removeStudent('${id}', '${s.id}')" class="text-red-500 font-bold">Remove</button></div>`;
+                    });
+                    studentHTML += `</div></div>`;
+                    studentListContainer.innerHTML += studentHTML;
+                }
+            });
+        }
+
+        function renderLoginDropdown() {
+             const select = document.getElementById('lecturerSelect');
+               select.innerHTML = '<option value="">Select your ID</option><option value="ADMIN">ADMIN</option>';
+               Object.keys(lecturerData).sort().forEach(id => {
+                   select.innerHTML += `<option value="${id}">${id} - ${lecturerData[id].name}</option>`;
+               });
+        }
+        
+        function buildEvaluationForm() {
+            const formContainer = document.querySelector('#evaluationForm > .space-y-8');
+            formContainer.innerHTML = '';
+            for (const sectionTitle in evaluationCriteria) {
+                let sectionHtml = `<div class="border-t pt-4 first:border-t-0 first:pt-0"><h4 class="text-xl font-bold text-purple-700 mb-4 pb-2">${sectionTitle}</h4><div class="space-y-6 pl-2">`;
+                evaluationCriteria[sectionTitle].forEach(crit => {
+                    let radioHtml = '';
+                    for (let i = 1; i <= 5; i++) {
+                        radioHtml += `<label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="${crit.id}" value="${i}" required class="form-radio text-purple-600"><span>${i}</span></label>`;
+                    }
+                    sectionHtml += `<div><label class="block text-md font-semibold text-gray-800">${crit.label}</label><div class="flex justify-around p-2 bg-gray-50 rounded-lg mt-2">${radioHtml}</div></div>`;
+                });
+                sectionHtml += `</div></div>`;
+                formContainer.innerHTML += sectionHtml;
+            }
+        }
+
+
+        // --- ACTIONS (Now connected to Firestore) ---
+
+        function addLecturer(name) {
+            if (!name.trim()) return;
+            const nextIdNum = Math.max(0, ...Object.keys(lecturerData).map(id => parseInt(id.replace('LEC', '')))) + 1;
+            const newId = `LEC${String(nextIdNum).padStart(3, '0')}`;
+            lecturerData[newId] = { name: name.toUpperCase(), password: generatePassword(name), students: [] };
+            
+            // Save the new lecturer to the online database
+            updateLecturerInFirestore(newId);
+            renderAll();
+        }
+
+        function removeLecturer(id) {
+            if (confirm(`Remove ${lecturerData[id].name}? This cannot be undone.`)) {
+                // Delete from the online database
+                deleteLecturerFromFirestore(id);
+                // Delete from local data
+                delete lecturerData[id];
+                renderAll();
+            }
+        }
+        
+        function changeLecturerPassword(id) {
+            const newPassword = prompt(`Enter new password for ${lecturerData[id].name}:`);
+            if (newPassword && newPassword.trim()) {
+                lecturerData[id].password = newPassword.trim();
+                // Save the change to the online database
+                updateLecturerInFirestore(id);
+                showSuccessMessage(`Password for ${lecturerData[id].name} has been updated.`);
+            }
+        }
+
+        function addStudent(lecturerId, id, name, company) {
+            if (!lecturerId || !id.trim() || !name.trim() || !company.trim()) return;
+            lecturerData[lecturerId].students.push({ id, name, company, evaluated: false, scores: {}, comments: '' });
+            // Save the change to the online database
+            updateLecturerInFirestore(lecturerId);
+            renderAll();
+        }
+
+        function removeStudent(lecturerId, studentId) {
+             if (confirm(`Remove student ${studentId}? This cannot be undone.`)) {
+                const students = lecturerData[lecturerId].students;
+                lecturerData[lecturerId].students = students.filter(s => s.id !== studentId);
+                // Save the change to the online database
+                updateLecturerInFirestore(lecturerId);
+                renderAll();
+            }
+        }
+        
+        function exportToExcel() {
+            let csv = "Lecturer,Student ID,Student Name,Company,Status," + Object.values(evaluationCriteria).flat().map(c => `"${c.label}"`).join(',') + ",Comments\r\n";
+            for (const id in lecturerData) {
+                lecturerData[id].students.forEach(s => {
+                    let row = [lecturerData[id].name, s.id, s.name, `"${s.company}"`, s.evaluated ? 'Completed' : 'Pending'];
+                    Object.values(evaluationCriteria).flat().forEach(c => row.push(s.scores[c.id] || ''));
+                    row.push(`"${(s.comments || '').replace(/"/g, '""')}"`);
+                    csv += row.join(',') + "\r\n";
+                });
+            }
+            const link = document.createElement("a");
+            link.href = 'data:text/csv;charset=utf-8,' + encodeURI(csv);
+            link.download = "evaluation_data.csv";
+            link.click();
+        }
+
+
+        // --- UI FLOW (No changes here) ---
+        function showScreen(screen) {
+            ['loginScreen', 'adminDashboard', 'dashboardScreen'].forEach(id => document.getElementById(id).classList.add('hidden'));
+            if (screen) document.getElementById(screen).classList.remove('hidden');
+        }
+
+        function showLecturerDashboard() {
+            showScreen('dashboardScreen');
+            document.getElementById('lecturerName').textContent = `Welcome, ${lecturerData[currentLecturer].name}`;
+            const tableBody = document.getElementById('studentTableBody');
+            tableBody.innerHTML = '';
+            lecturerData[currentLecturer].students.forEach(s => {
+                tableBody.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="p-4">${s.id}</td><td class="p-4 font-medium">${s.name}</td><td class="p-4">${s.company}</td><td class="p-4"><span class="px-3 py-1 text-xs font-semibold rounded-full ${s.evaluated ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${s.evaluated ? 'Completed' : 'Pending'}</span></td><td class="p-4 text-center"><button onclick="openEvaluationModal('${s.id}')" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg">${s.evaluated ? 'View/Edit' : 'Evaluate'}</button></td></tr>`;
+            });
+        }
+        
+        function openEvaluationModal(studentId) {
+            currentStudentId = studentId;
+            const student = lecturerData[currentLecturer].students.find(s => s.id === studentId);
+            document.getElementById('studentInfo').innerHTML = `<p><strong>Student:</strong> ${student.name} (${student.id})</p><p><strong>Company:</strong> ${student.company}</p>`;
+            
+            // Pre-fill the form if already evaluated
+            document.getElementById('evaluationForm').reset();
+            document.getElementById('comments').value = student.comments || '';
+            Object.keys(student.scores).forEach(key => {
+                const radio = document.querySelector(`input[name="${key}"][value="${student.scores[key]}"]`);
+                if (radio) radio.checked = true;
+            });
+            
+            document.getElementById('evaluationModal').classList.remove('hidden');
+        }
+
+        function closeEvaluationModal() {
+            document.getElementById('evaluationForm').reset();
+            document.getElementById('evaluationModal').classList.add('hidden');
+            currentStudentId = null;
+        }
+        
+        function showSuccessMessage(message) {
+            const el = document.getElementById('successMessage');
+            el.textContent = message;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 3000);
+        }
+        
+        function logout() {
+            currentLecturer = null;
+            showScreen('loginScreen');
+            document.getElementById('passwordInput').value = '';
+            document.getElementById('lecturerSelect').value = '';
+        }
+
+        
+        // --- EVENT LISTENERS ---
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById('lecturerSelect').value;
+            const pass = document.getElementById('passwordInput').value;
+            if (id === 'ADMIN' && pass === 'faris123') {
+                currentLecturer = 'ADMIN';
+                showScreen('adminDashboard');
+                renderAdminDashboard();
+            } else if (lecturerData[id]?.password === pass) {
+                currentLecturer = id;
+                showLecturerDashboard();
+            } else {
+                alert('Invalid ID or password');
+            }
+        });
+
+        document.getElementById('evaluationForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const student = lecturerData[currentLecturer].students.find(s => s.id === currentStudentId);
+            if (student) {
+                student.evaluated = true;
+                const formData = new FormData(e.target);
+                student.scores = Object.fromEntries(formData.entries());
+                student.comments = document.getElementById('comments').value;
+                // Save the change to the online database
+                updateLecturerInFirestore(currentLecturer);
+            }
+            closeEvaluationModal();
+            showLecturerDashboard();
+            showSuccessMessage('Evaluation submitted!');
+        });
+        
+        document.getElementById('addLecturerForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('newLecturerName');
+            addLecturer(input.value);
+            input.value = '';
+        });
+        
+        document.getElementById('addStudentForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            addStudent(
+                document.getElementById('studentLecturerSelect').value,
+                document.getElementById('newStudentId').value,
+                document.getElementById('newStudentName').value,
+                document.getElementById('newStudentCompany').value
+            );
+            e.target.reset();
+        });
+
+
+        // --- INITIALIZATION ---
+        // This is the main function that runs when the page loads
+        document.addEventListener('DOMContentLoaded', async () => {
+            // First, load all data from the online database
+            await loadData();
+            // Second, build the empty evaluation form
+            buildEvaluationForm();
+            // Finally, show the login screen with the loaded lecturer names
+            renderLoginDropdown();
+            console.log("Application is ready.");
+        });
+    </script>
+</body>
+</html>
